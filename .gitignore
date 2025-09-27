@@ -13,7 +13,7 @@
 *_cache/
 *_files/
 
-# ---- Data outputs (too large for GitHub) ----
+# ---- Data outputs----
 quants/
 *.fastq.gz
 *.bam

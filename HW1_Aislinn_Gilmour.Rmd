@@ -42,10 +42,32 @@ BiocManager::install('EnhancedVolcano')
 BiocManager::install("apeglm") # It's will be used in the lfcShrink after DESeq2
 ```
 
-
+Load Libraries
 ```{r}
 library(DESeq2)
 library(tximport)
 library(EnhancedVolcano)
+library(tidyr)
+library(readr)
+```
+
+2.1.2. Read in Salmon Data
+```{r}
+data = read.csv("dataset.csv", header=T)
+files <- file.path("salmon", data$Sample, "quant.sf")
+tx2gene_full <- read.csv("gencode.v48.tx2gene.csv")
+tx2gene <- tx2gene_full[c("transcript_id", "gene_name")]
+txi <- tximport(files, type="salmon", tx2gene=tx2gene)
+```
+
+2.1.3. Run DESeq2 on the tximported data
+```{r}
+#convert Response col to factor
+data$Response<-as.factor(data$Response)
+
+ddsTxi <- DESeqDataSetFromTximport(txi, colData=data, design=~Response) # Fill in your code here. 
+dds<-DESeq(ddsTxi)
+dds_res<-results(dds, contrast="Response","R","NR") # Fill in the code here to make sure the comparison order is R vs NR, not NR vs R.
+summary(dds_res)
 ```
 
