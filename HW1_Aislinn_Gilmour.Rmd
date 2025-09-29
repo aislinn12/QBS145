@@ -67,7 +67,7 @@ data$Response<-as.factor(data$Response)
 
 ddsTxi <- DESeqDataSetFromTximport(txi, colData=data, design=~Response) # Fill in your code here. 
 dds<-DESeq(ddsTxi)
-dds_res<-results(dds, contrast="Response","R","NR") # Fill in the code here to make sure the comparison order is R vs NR, not NR vs R.
+dds_res<-results(dds, contrast=c("Response","R","NR")) # Fill in the code here to make sure the comparison order is R vs NR, not NR vs R.
 summary(dds_res)
 ```
 
