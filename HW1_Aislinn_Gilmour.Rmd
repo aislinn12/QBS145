@@ -35,7 +35,7 @@ ENST00000832836.1	1636	1470.242	0.000000	0.000
 2.1.1. Install DESeq2. Recommend installing the packages through bioconductor. Additional packages: tximport, EnhancedVolcano
 ```{r}
 # if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
+#    install.packages("BiocManager")
 
 # BiocManager::install("DESeq2")
 # BiocManager::install("tximport")
@@ -85,7 +85,8 @@ dds_resLFCShrink<-lfcShrink(dds, coef="Response_R_vs_NR", res=dds_res)
 EnhancedVolcano(dds_resLFCShrink, lab=rownames(dds_resLFCShrink), x="log2FoldChange", y="padj", pCutoff=0.1)
 ```
 *Question*: Does the lfcShrink change the volcano plot? If so, what changes?
-Yes, the lfcshrink decreased the noise in the plot and reduced outliers with extreme fold changes so that more genes were pulled to 0 on the X axis and the axis scale was able to shrink. This also allowed for additional genes to come through in the model, inlcuding GOLGA8O and TFAP2A. 
+
+Yes, the lfcshrink decreased the noise in the plot and reduced outliers with extreme fold changes so that more genes were pulled to 0 on the X axis, and the axis scale was able to shrink. This allowed for additional genes to come through in the model, inlcuding GOLGA8O and TFAP2A. 
 
 *Problem 2.2*: GO Enrichment Analysis
 ```{r}
@@ -111,7 +112,8 @@ summary(go_res)
 ```
 
 *Question*: did you find any enrichment GO term? If not, what part of the given code snippet (after filling the missing part) would you change?
-No, 
+
+No, it did not return any GO terms. I could increase the cut off p-value to be higher than 0.1 to return some GO terms, but it would likely be better to run a GSEA instead (as we do below).
 
 *Problem 2.3*: GSEA using clusterProfilter (10 points)
 ```{r}
@@ -231,6 +233,8 @@ gseaplot2(gsea_go_res, geneSetID = "GO:0033108")
 ```
 *Question*: do you think the new results that consider batch effects give more biological meaningful results? What is your biological conclusion from the analysis?
 
+Yes, the PCA showed that batch effect was significantly confounding the initial results. The results from the first analysis were more impacted by technical variation than biology. After adjusting for batch effect we can more accurately detect biologically relevant GO terms, as seen with the GO enrichment analysis returning 15 GO terms instead of none, and the GSEA analysis returning different GO terms than in the initial analysis. 
+
 **Problem 4.** Use EPIC for immune cell deconvolution (20 points)
 ```{r}
 # install.packages("devtools")
@@ -271,7 +275,7 @@ p
 
 *Question*: For the cell type with p-value less than 0.2, provide the potential explanation on why this is between R and NR. If you don't see such cell type, then disregard the significance, select one of the cell type to provide the potential difference regardless of p-value.
 
-CD4 T cells have a p-value of 0.1, meaning they are significantly more expressed in non-responders to the immunotherapy for glioblastoma than the responders. This could be because when CD4+ treg cells are overexpressed they are immunosupressive, making the treatment ineffective.
+CD4 T cells have a p-value of 0.1, meaning they are significantly more expressed in the non-responders than the responders to the immunotherapy for glioblastoma. This could be because when CD4+ treg cells are overexpressed they are immunosupressive, making the treatment less ineffective.
 
 
 
