@@ -1,5 +1,5 @@
 ---
-title: 'Computation Immunology HW #1'
+title: 'Computational Immunology HW #1'
 author: "Aislinn Gilmour"
 date: "2025-09-27"
 output:
