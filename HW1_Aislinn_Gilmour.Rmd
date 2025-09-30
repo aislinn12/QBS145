@@ -10,7 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 **Problem 1** 
-*Output from first 10 lines of the gene expression file for SRR8281233:*
+
+*Question*: Show the first few lines of the gene expression file (quant.sf) for SRR8281233, and explain what each column represents.
 (salmon) [f006fph@polaris8 SRR8281233]$ head quant.sf
 Name	Length	EffectiveLength	TPM	NumReads
 ENST00000832824.1	1379	1213.242	0.000000	0.000
@@ -23,23 +24,23 @@ ENST00000832830.1	1260	1094.242	0.000000	0.000
 ENST00000832837.1	1553	1387.242	0.000000	0.000
 ENST00000832836.1	1636	1470.242	0.000000	0.000
 
-*Name*: 
-*Length*:
-*Effective Length*:
-*TPM*:
-*NumReads*:
+*Name*: Transcript ID, can be translated to a readable gene name
+*Length*: Length of the full underlying transcript
+*Effective Length*: Length of the transcript after adjusting for areas of the transcript with low transcript integrity to only keep the usable portions of the transcript for generating fragments
+*TPM*: Normalized transcript abundance
+*NumReads*: Sum of the weighted read distribution
 
 **Problem 2**
 *Problem 2.1*: Analyzing with DESeq2 for differential gene expression analysis between responders (R) and non-responders (NR) (20 points)
 2.1.1. Install DESeq2. Recommend installing the packages through bioconductor. Additional packages: tximport, EnhancedVolcano
 ```{r}
-if (!requireNamespace("BiocManager", quietly = TRUE))
+# if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
-BiocManager::install("DESeq2")
-BiocManager::install("tximport")
-BiocManager::install('EnhancedVolcano')
-BiocManager::install("apeglm") # It's will be used in the lfcShrink after DESeq2
+# BiocManager::install("DESeq2")
+# BiocManager::install("tximport")
+# BiocManager::install('EnhancedVolcano')
+# BiocManager::install("apeglm") # It's will be used in the lfcShrink after DESeq2
 ```
 
 Load Libraries
@@ -48,6 +49,7 @@ library(DESeq2)
 library(tximport)
 library(EnhancedVolcano)
 library(tidyr)
+library(dplyr)
 library(readr)
 ```
 
@@ -83,6 +85,7 @@ dds_resLFCShrink<-lfcShrink(dds, coef="Response_R_vs_NR", res=dds_res)
 EnhancedVolcano(dds_resLFCShrink, lab=rownames(dds_resLFCShrink), x="log2FoldChange", y="padj", pCutoff=0.1)
 ```
 *Question*: Does the lfcShrink change the volcano plot? If so, what changes?
+Yes, the lfcshrink decreased the noise in the plot and reduced outliers with extreme fold changes so that more genes were pulled to 0 on the X axis and the axis scale was able to shrink. This also allowed for additional genes to come through in the model, inlcuding GOLGA8O and TFAP2A. 
 
 *Problem 2.2*: GO Enrichment Analysis
 ```{r}
@@ -108,6 +111,7 @@ summary(go_res)
 ```
 
 *Question*: did you find any enrichment GO term? If not, what part of the given code snippet (after filling the missing part) would you change?
+No, 
 
 *Problem 2.3*: GSEA using clusterProfilter (10 points)
 ```{r}
@@ -236,13 +240,15 @@ library(EPIC)
 ```
 
 ```{r}
-epic_res<-EPIC(txi, reference="BRef") # Use blood as reference. 
+abundance<- txi$abundance
+epic_res<-EPIC(abundance, reference="BRef") # Use blood as reference. 
 epic_res$cellFractions
 ```
 
 *Question*: Visualize the cellFraction difference between R and NR for all the EPIC cell types and calculate the p-value for the difference using Wilcoxon rank-sum test. For example, the fraction of B cells in R vs NR. You may use the code below or implement your own code.
 
 ```{r}
+library(ggpubr)
 # This is an example using ggplot and ggpubr . You may need to install corresponding packages if you decide to use this code.
 epic_wmeta <- bind_cols(data, epic_res$cellFractions)
 
@@ -264,3 +270,8 @@ p
 ```
 
 *Question*: For the cell type with p-value less than 0.2, provide the potential explanation on why this is between R and NR. If you don't see such cell type, then disregard the significance, select one of the cell type to provide the potential difference regardless of p-value.
+
+CD4 T cells have a p-value of 0.1, meaning they are significantly more expressed in non-responders to the immunotherapy for glioblastoma than the responders. This could be because when CD4+ treg cells are overexpressed they are immunosupressive, making the treatment ineffective.
+
+
+
