@@ -30,7 +30,7 @@ ENST00000832836.1	1636	1470.242	0.000000	0.000
 *NumReads*:
 
 **Problem 2**
-*Problem 2.1: Analyzing with DESeq2 for differential gene expression analysis between responders (R) and non-responders (NR) (20 points)*
+*Problem 2.1*: Analyzing with DESeq2 for differential gene expression analysis between responders (R) and non-responders (NR) (20 points)
 2.1.1. Install DESeq2. Recommend installing the packages through bioconductor. Additional packages: tximport, EnhancedVolcano
 ```{r}
 if (!requireNamespace("BiocManager", quietly = TRUE))
@@ -70,4 +70,77 @@ dds<-DESeq(ddsTxi)
 dds_res<-results(dds, contrast=c("Response","R","NR")) # Fill in the code here to make sure the comparison order is R vs NR, not NR vs R.
 summary(dds_res)
 ```
+
+2.1.4. Volcano plot on the raw DESeq2 result (log2foldchange and adjusted p value)
+```{r}
+EnhancedVolcano(dds_res, lab=rownames(dds_res), x="log2FoldChange", y="padj", pCutoff=0.1)
+```
+
+2.1.5. Shrink the log2foldchange then examine the volcano plot
+```{r}
+resultsNames(dds)
+dds_resLFCShrink<-lfcShrink(dds, coef="Response_R_vs_NR", res=dds_res) 
+EnhancedVolcano(dds_resLFCShrink, lab=rownames(dds_resLFCShrink), x="log2FoldChange", y="padj", pCutoff=0.1)
+```
+*Question*: Does the lfcShrink change the volcano plot? If so, what changes?
+
+*Problem 2.2*: GO Enrichment Analysis
+```{r}
+# Load clusterProfilter and the human GO database
+# BiocManager::install("clusterProfiler")
+# BiocManager::install("org.Hs.eg.db")
+
+library(clusterProfiler)
+library(org.Hs.eg.db)
+```
+
+```{r}
+dds_resLFCShrink$gene_name <- rownames(dds_resLFCShrink)
+up_genes <- unique(na.omit(subset(dds_resLFCShrink, padj<0.1 & log2FoldChange > 0))$gene_name) # Use the genes with adjusted p value less than 0.1
+
+go_res<-enrichGO(gene = up_genes,
+         OrgDb         = org.Hs.eg.db,
+         keyType       = "SYMBOL",
+         ont           = "BP",
+         pAdjustMethod = "BH",
+         qvalueCutoff  = 0.1)
+summary(go_res)
+```
+
+*Question*: did you find any enrichment GO term? If not, what part of the given code snippet (after filling the missing part) would you change?
+
+*Problem 2.3*: GSEA using clusterProfilter (10 points)
+```{r}
+#BiocManager::install("enrichplot")
+
+library(enrichplot)
+```
+
+```{r}
+# ??vs dds_resFCShrink$log2FoldChange
+gene_list <- dds_res$stat # Fill your code here. Which feature do you want to use to order the genes?
+names(gene_list) <- rownames(dds_res)
+gene_list<-na.omit(gene_list)
+gene_list <- sort(gene_list, decreasing=TRUE)
+
+gsea_go_res<-gseGO(gene = gene_list,
+         OrgDb         = org.Hs.eg.db,
+         keyType       = "SYMBOL",
+         ont           = "BP",
+         pAdjustMethod = "BH")
+head(gsea_go_res)
+```
+
+
+```{r}
+# Draw the GSEA plot for the most significant pathway 
+gseaplot2(gsea_go_res, geneSetID = "GO:0048706")
+```
+
+
+
+
+
+
+
 
