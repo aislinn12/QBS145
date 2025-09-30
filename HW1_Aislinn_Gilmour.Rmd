@@ -137,10 +137,130 @@ head(gsea_go_res)
 gseaplot2(gsea_go_res, geneSetID = "GO:0048706")
 ```
 
+**Problem 3** Differential gene expression analysis considering batch effect (20 points)
+
+```{r}
+library(ggplot2)
+
+# PCA for 2000 genes with highest variances for batch effect inspection
+log2tpm <- log2(txi$abundance+1)
+rv <- apply(log2tpm, 1, var)
+cutoff <- sort(rv, decreasing = TRUE)[2000]
+log2tpm_variable <- log2tpm[rv >= cutoff, ]
+sample_data_pca <- data.frame(data,prcomp(t(log2tpm_variable),scale = TRUE, center = TRUE)$x)
+ggplot2::ggplot(sample_data_pca, ggplot2::aes(x = PC1, y = PC2, shape=Response, color = as.factor(Batch))) +ggplot2::geom_point(size=10)
+```
+
+Run DESeq2 on the tximported data- with batch effect in the model
+```{r}
+#convert Response col to factor
+data$Response<-as.factor(data$Response)
+
+ddsTxi <- DESeqDataSetFromTximport(txi, colData=data, design=~Response + as.factor(Batch)) # Fill in your code here. 
+dds<-DESeq(ddsTxi)
+dds_res<-results(dds, contrast=c("Response","R","NR")) # Fill in the code here to make sure the comparison order is R vs NR, not NR vs R.
+summary(dds_res)
+```
+
+Volcano plot on the raw DESeq2 result (log2foldchange and adjusted p value)
+```{r}
+EnhancedVolcano(dds_res, lab=rownames(dds_res), x="log2FoldChange", y="padj", pCutoff=0.1)
+```
+
+Shrink the log2foldchange then examine the volcano plot
+```{r}
+resultsNames(dds)
+dds_resLFCShrink<-lfcShrink(dds, coef="Response_R_vs_NR", res=dds_res) 
+EnhancedVolcano(dds_resLFCShrink, lab=rownames(dds_resLFCShrink), x="log2FoldChange", y="padj", pCutoff=0.1)
+```
+
+GO Enrichment Analysis
+```{r}
+# Load clusterProfilter and the human GO database
+# BiocManager::install("clusterProfiler")
+# BiocManager::install("org.Hs.eg.db")
+
+# library(clusterProfiler)
+# library(org.Hs.eg.db)
+```
+
+```{r}
+dds_resLFCShrink$gene_name <- rownames(dds_resLFCShrink)
+up_genes <- unique(na.omit(subset(dds_resLFCShrink, padj<0.1 & log2FoldChange > 0))$gene_name) # Use the genes with adjusted p value less than 0.1
+
+go_res<-enrichGO(gene = up_genes,
+         OrgDb         = org.Hs.eg.db,
+         keyType       = "SYMBOL",
+         ont           = "BP",
+         pAdjustMethod = "BH",
+         qvalueCutoff  = 0.1)
+summary(go_res)
+```
 
 
+GSEA using clusterProfilter 
+```{r}
+#BiocManager::install("enrichplot")
+
+# library(enrichplot)
+```
+
+```{r}
+# ??vs dds_resFCShrink$log2FoldChange
+gene_list <- dds_res$stat # Fill your code here. Which feature do you want to use to order the genes?
+names(gene_list) <- rownames(dds_res)
+gene_list<-na.omit(gene_list)
+gene_list <- sort(gene_list, decreasing=TRUE)
+
+gsea_go_res<-gseGO(gene = gene_list,
+         OrgDb         = org.Hs.eg.db,
+         keyType       = "SYMBOL",
+         ont           = "BP",
+         pAdjustMethod = "BH")
+head(gsea_go_res)
+```
 
 
+```{r}
+# Draw the GSEA plot for the most significant pathway 
+gseaplot2(gsea_go_res, geneSetID = "GO:0033108")
+```
+*Question*: do you think the new results that consider batch effects give more biological meaningful results? What is your biological conclusion from the analysis?
 
+**Problem 4.** Use EPIC for immune cell deconvolution (20 points)
+```{r}
+# install.packages("devtools")
+# devtools::install_github("GfellerLab/EPIC", build_vignettes=TRUE) # https://github.com/GfellerLab/EPIC
 
+library(EPIC)
+```
 
+```{r}
+epic_res<-EPIC(txi, reference="BRef") # Use blood as reference. 
+epic_res$cellFractions
+```
+
+*Question*: Visualize the cellFraction difference between R and NR for all the EPIC cell types and calculate the p-value for the difference using Wilcoxon rank-sum test. For example, the fraction of B cells in R vs NR. You may use the code below or implement your own code.
+
+```{r}
+# This is an example using ggplot and ggpubr . You may need to install corresponding packages if you decide to use this code.
+epic_wmeta <- bind_cols(data, epic_res$cellFractions)
+
+epic_wmeta_long <- epic_wmeta %>% pivot_longer(cols=all_of(colnames(epic_res$cellFractions)),
+                                              names_to="celltype", values_to="fraction")
+
+p <- ggplot(epic_wmeta_long, aes(x = Response, y = fraction, fill = Response)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +   
+  geom_jitter(width = 0.15, size = 1.2, alpha = 0.6) +
+  facet_wrap(~ celltype, scales = "free_y", ncol = 4) + 
+  theme_bw() +
+  labs(x = "", y = "Cell fraction") +
+  theme(legend.position = "none")
+
+p <- p + stat_compare_means(method = "wilcox.test", 
+        aes(label=paste0("p=", after_stat(p.format))))
+
+p
+```
+
+*Question*: For the cell type with p-value less than 0.2, provide the potential explanation on why this is between R and NR. If you don't see such cell type, then disregard the significance, select one of the cell type to provide the potential difference regardless of p-value.
