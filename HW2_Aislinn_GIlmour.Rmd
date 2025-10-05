@@ -1,0 +1,54 @@
+---
+title: "HW 2"
+author: "Aislinn Gilmour"
+date: "2025-10-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load Libraries
+```{r, message=FALSE, warning=FALSE}
+library(tidyr)
+library(dplyr)
+library(Seurat)
+library(ggplot2)
+library(clustree)
+```
+
+Get Files and Sample Names
+```{r}
+files = list.files("inserthere", pattern = ".h5", full = TRUE)
+samples = sapply(strsplit(files, split = ""),function(x)x[3])
+```
+
+Load in Data
+```{r}
+for(i in 1:length(samples)){
+ sample = samples[i]
+ file = files[i]
+ print(sample)
+ td = Read10X_h5(file)
+ t = CreateSeuratObject(counts = td, project=sample)
+ if(sample == samples[1]){
+ obj = t
+ }else{
+ obj = merge(obj, t)
+ }
+}
+```
+
+Set up Patient Cohorts
+```{r}
+
+```
+
+
+
+
+
+
+
+
