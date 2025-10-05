@@ -18,9 +18,23 @@ library(ggplot2)
 library(clustree)
 ```
 
+Load in Data from Geo
+```{r}
+#untar data from GEO
+untar("GSE155224_RAW.tar", exdir = "data")
+
+#delete all the CITE files from the data folder
+file.remove(list.files("data", pattern = "CITE", full.names = TRUE))
+
+#unzip the cell ranger files
+for (f in list.files("data", pattern = "cellranger\\.tar\\.gz$", full.names = TRUE)) {
+  untar(f, exdir = file.path("data/unzipped", sub("\\.tar.*$", "", basename(f))))
+}
+```
+
 Get Files and Sample Names
 ```{r}
-files = list.files("inserthere", pattern = ".h5", full = TRUE)
+files = list.files("data/unzipped", pattern = "filtered_feature_bc_matrix$", full = TRUE)
 samples = sapply(strsplit(files, split = ""),function(x)x[3])
 ```
 
@@ -30,7 +44,7 @@ for(i in 1:length(samples)){
  sample = samples[i]
  file = files[i]
  print(sample)
- td = Read10X_h5(file)
+ td = Read10X(file)
  t = CreateSeuratObject(counts = td, project=sample)
  if(sample == samples[1]){
  obj = t
@@ -42,7 +56,8 @@ for(i in 1:length(samples)){
 
 Set up Patient Cohorts
 ```{r}
-
+obj@meta.data$cohort = "COVID-19"
+obj@meta.data$cohort[nchar(obj@meta.data$orig.ident) == 10] = "Healthy"
 ```
 
 
