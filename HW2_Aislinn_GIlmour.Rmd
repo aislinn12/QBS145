@@ -21,21 +21,32 @@ library(clustree)
 Load in Data from Geo
 ```{r}
 #untar data from GEO
-untar("GSE155224_RAW.tar", exdir = "data")
-
-#delete all the CITE files from the data folder
-file.remove(list.files("data", pattern = "CITE", full.names = TRUE))
+untar("GSE155224_RAW.tar", exdir = "geo_data")
 
 #unzip the cell ranger files
-for (f in list.files("data", pattern = "cellranger\\.tar\\.gz$", full.names = TRUE)) {
-  untar(f, exdir = file.path("data/unzipped", sub("\\.tar.*$", "", basename(f))))
+#NOTE- i used Chat GPT to help write this loop because I couldn't get the data to 
+#load in correctly and I couldn't find any examples online doing it in a loop 
+for (f in list.files("geo_data", pattern = "cellranger\\.tar\\.gz$", full.names = TRUE,
+                     recursive = TRUE)) {
+  outdir <- file.path("geo_data", "unzipped", sub("\\.tar.*$", "", basename(f)))
+  dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
+  untar(f, exdir = outdir)
 }
 ```
 
 Get Files and Sample Names
 ```{r}
-files = list.files("data/unzipped", pattern = "filtered_feature_bc_matrix$", full = TRUE)
-samples = sapply(strsplit(files, split = ""),function(x)x[3])
+files <- list.files("geo_data/unzipped",
+                    #all.files = TRUE,
+                    #recursive = TRUE,
+                    full.names = TRUE,
+                    #ignore.case = TRUE
+                    )
+
+#ignore CITE files
+files <- files[!grepl("CITE", files, ignore.case = TRUE)]
+
+samples = sapply(strsplit(files, split = "_"), function(x)x[3])
 ```
 
 Load in Data
