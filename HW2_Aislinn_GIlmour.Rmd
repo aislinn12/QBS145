@@ -19,7 +19,7 @@ library(clustree)
 ```
 
 Load in Data from Geo
-```{r}
+```{r , message=FALSE, warning=FALSE}
 #untar data from GEO
 untar("GSE155224_RAW.tar", exdir = "geo_data")
 
@@ -35,18 +35,23 @@ for (f in list.files("geo_data", pattern = "cellranger\\.tar\\.gz$", full.names 
 ```
 
 Get Files and Sample Names
-```{r}
-files <- list.files("geo_data/unzipped",
-                    #all.files = TRUE,
-                    #recursive = TRUE,
-                    full.names = TRUE,
-                    #ignore.case = TRUE
-                    )
+```{r, message=FALSE, warning=FALSE}
+# Note: I also used Chat GPT to use the right RegEx for this section to reference the correct file paths
 
-#ignore CITE files
+files <- list.files(
+  "geo_data/unzipped",
+  pattern = "filtered_feature_bc_matrix$",
+  recursive = TRUE,
+  full.names = TRUE,
+  include.dirs = TRUE
+)
+
+# Skip CITE files
 files <- files[!grepl("CITE", files, ignore.case = TRUE)]
 
-samples = sapply(strsplit(files, split = "_"), function(x)x[3])
+inner   <- basename(dirname(dirname(files)))
+samples <- sub("_.*$", "", inner)
+
 ```
 
 Load in Data
@@ -71,6 +76,9 @@ obj@meta.data$cohort = "COVID-19"
 obj@meta.data$cohort[nchar(obj@meta.data$orig.ident) == 10] = "Healthy"
 ```
 
+```{r}
+
+```
 
 
 
