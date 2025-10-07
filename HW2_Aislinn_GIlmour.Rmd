@@ -17,6 +17,7 @@ library(Seurat)
 library(ggplot2)
 library(clustree)
 library(harmony)
+library(clustree)
 ```
 
 **Get ready for data integration. 20 points **
@@ -128,6 +129,7 @@ obj <- ScaleData(obj)
 
 **2.	Run PCA, then integrate all samples together using Harmony. 10 points**
 
+
 PCA
 ```{r, message=FALSE, warning=FALSE}
 obj <- RunPCA(obj, features = VariableFeatures(object = obj))
@@ -164,10 +166,72 @@ saveRDS(obj, "~/Documents/Dartmouth Class Work/Fall 2025/QBS145/obj.int.rds")
 ```
 
 **3.	Cluster cells together using the integrated values. Set the resolution so you get 10 clusters (this is not what you should do on real data but makes grading easier). 10 points**
+```{r, message=FALSE, warning=FALSE}
+# Find (default 20) nearest neighbors of each cell
+obj.int <- FindNeighbors(obj.int, reduction = "harmony", dims = 1:30)
+
+#use ClusTree to find the resolution that gives 10 clusters
+# make a vector of resolutions
+resolutions = seq(0.1,1.0,0.05)
+
+# cluster at each resolution
+obj.int = FindClusters(obj.int, resolution = resolutions)
+
+# create clustering tree to find optimal resolution
+print(clustree(obj.int, prefix = "RNA_snn_res."))
+
+# looked in meta data- resolution .15 creates 10 clusters
+# pick resolution 0.15
+Idents(obj.int) = obj.int$RNA_snn_res.0.15
+```
+
+**4.	Generate UMAPs for your integrated data using dimensions 1:30.** Color cells by:
+
+**a.	Cluster**
 ```{r}
+# UMAP by cluster:
+DimPlot(
+obj.int,
+reduction = "umap.harmony",
+combine = TRUE, label.size = 4,
+label=TRUE
+)
+```
+
+**b.	Patient**
+```{r}
+DimPlot(
+  obj.int,
+  reduction = "umap.harmony",
+  group.by = c("orig.ident"),
+  combine = TRUE, label.size = 4
+)
+```
+ 
+ **c.	mtDNA percentage**
+```{r}
+FeaturePlot(
+  obj.int,
+  reduction = "umap.harmony",
+  features = c("percent.mt"),
+  combine = TRUE, label.size = 4
+)
+```
+
+**d.	Expression of the genes CD3E and MS4A1.** 
+```{r}
+FeaturePlot(
+  obj.int,
+  reduction = "umap.harmony",
+  features = c("CD3E", "MS4A1"),
+  combine = TRUE, label.size = 4
+)
 
 ```
 
+**Do the data appear to have been successfully integrated using Harmony? Explain why or why not. 10 points**
+
+Yes. The Harmony integration successfully grouped the cells into 10 distinct clusters. The by-patient UMAP show that the patient's cells seem to be randomly dispersed among the cell clusters, meaning batch effect is likely not an issue. The mitochondrial DNA UMAP shows that there is low percentages of mtDNA across most of the clusters, suggesting that the quality of the read is high, and the two gene expression UMAPs show two distinct clusters by gene type, which would suggest successful integration and no major technical errors. 
 
 
 
