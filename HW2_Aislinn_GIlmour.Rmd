@@ -16,6 +16,7 @@ library(dplyr)
 library(Seurat)
 library(ggplot2)
 library(clustree)
+library(harmony)
 ```
 
 **Get ready for data integration. 20 points **
@@ -92,7 +93,7 @@ saveRDS(obj, "~/Documents/Dartmouth Class Work/Fall 2025/QBS145/obj.rds")
 ```
 
 **c.	Normalize the count data log-transformation**
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # normalize
 obj <- NormalizeData(obj)
 ```
@@ -123,6 +124,48 @@ VariableFeatures(obj) = current_variable_features[!current_variable_features %in
 ```{r, message=FALSE, warning=FALSE}
 # mean 0, variance 1
 obj <- ScaleData(obj)
+```
+
+**2.	Run PCA, then integrate all samples together using Harmony. 10 points**
+
+PCA
+```{r, message=FALSE, warning=FALSE}
+obj <- RunPCA(obj, features = VariableFeatures(object = obj))
+
+# print
+print(obj[["pca"]], dims = 1:5, nfeatures = 5)
+DimPlot(obj, reduction = "pca") + NoLegend()
+DimHeatmap(obj, dims = 1, cells = 500, balanced = TRUE)
+```
+
+
+Integrate with Harmony 
+```{r, message=FALSE, warning=FALSE}
+# Integrate using Harmony
+obj.int <- IntegrateLayers(
+  object = obj, method = HarmonyIntegration,
+  orig.reduction = "pca", new.reduction = "harmony",
+  verbose = FALSE
+  )
+# Make UMAP
+obj.int <- RunUMAP(obj.int, reduction = "harmony",
+  dims = 1:30, reduction.name = "umap.harmony")
+
+# Plot UMAP
+DimPlot(
+  obj.int,
+  reduction = "umap.harmony",
+  group.by = c("orig.ident"),
+  combine = TRUE, label.size = 4
+  )
+
+# Save object
+saveRDS(obj, "~/Documents/Dartmouth Class Work/Fall 2025/QBS145/obj.int.rds")
+```
+
+**3.	Cluster cells together using the integrated values. Set the resolution so you get 10 clusters (this is not what you should do on real data but makes grading easier). 10 points**
+```{r}
+
 ```
 
 
