@@ -18,6 +18,10 @@ library(ggplot2)
 library(clustree)
 ```
 
+**Get ready for data integration. 20 points **
+
+**a.	Read in all data samples to create a combined object.**
+
 Load in Data from Geo
 ```{r , message=FALSE, warning=FALSE}
 #untar data from GEO
@@ -55,7 +59,7 @@ samples <- sub("_.*$", "", inner)
 ```
 
 Load in Data
-```{r}
+```{r, message=FALSE, warning=FALSE}
 for(i in 1:length(samples)){
  sample = samples[i]
  file = files[i]
@@ -71,16 +75,55 @@ for(i in 1:length(samples)){
 ```
 
 Set up Patient Cohorts
-```{r}
+```{r , message=FALSE, warning=FALSE}
 obj@meta.data$cohort = "COVID-19"
 obj@meta.data$cohort[nchar(obj@meta.data$orig.ident) == 10] = "Healthy"
 ```
 
-```{r}
+**b.	Remove cells with >10% mtDNA and < 400 features**
+```{r, message=FALSE, warning=FALSE}
+# remove cells with < 400 features or >10% mtDNA
+p = PercentageFeatureSet(object = obj, pattern = "^MT-")
+obj[["percent.mt"]] = p
+obj = subset(x = obj, subset = nFeature_RNA > 400 & percent.mt < 10)
 
+# save intermediate file
+saveRDS(obj, "~/Documents/Dartmouth Class Work/Fall 2025/QBS145/obj.rds")
+```
+
+**c.	Normalize the count data log-transformation**
+```{r}
+# normalize
+obj <- NormalizeData(obj)
+```
+
+**d.	Find the top 2000 most variable genes.**
+```{r, message=FALSE, warning=FALSE}
+# 2000 most variable genes
+obj <- FindVariableFeatures(obj)
+```
+
+**e.	Remove immunoglobulin (BCR) and TCR-related genes from variable genes list.**
+```{r, message=FALSE, warning=FALSE}
+# look at variable genes from Ig and TR variable and constant region segments
+head(VariableFeatures(obj)[grepl("^IG|^TR",VariableFeatures(obj))])
+
+# Get list of Ig and TR variable and constant region segments
+load("QC_features_meta.RData")
+biotypes_excl = unique(features_meta[["gene_biotype"]])[grepl(pattern="^IG_|^TR_", x=unique(features_meta[["gene_biotype"]]))]
+remove.genes = features_meta[["external_gene_name"]][features_meta[["gene_biotype"]] %in% biotypes_excl]
+
+# remove IG and TR genes from variable genes list
+current_variable_features = VariableFeatures(obj)
+VariableFeatures(obj) = current_variable_features[!current_variable_features %in% remove.genes]
 ```
 
 
+**f. Scale data**
+```{r, message=FALSE, warning=FALSE}
+# mean 0, variance 1
+obj <- ScaleData(obj)
+```
 
 
 
