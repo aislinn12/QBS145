@@ -231,7 +231,70 @@ FeaturePlot(
 
 **Do the data appear to have been successfully integrated using Harmony? Explain why or why not. 10 points**
 
-Yes. The Harmony integration successfully grouped the cells into 10 distinct clusters. The by-patient UMAP show that the patient's cells seem to be randomly dispersed among the cell clusters, meaning batch effect is likely not an issue. The mitochondrial DNA UMAP shows that there is low percentages of mtDNA across most of the clusters, suggesting that the quality of the read is high, and the two gene expression UMAPs show two distinct clusters by gene type, which would suggest successful integration and no major technical errors. 
+Yes. The Harmony integration successfully grouped the cells into 10 distinct clusters. The by-patient UMAP show that the patient's cells seem to be randomly dispersed among the cell clusters, meaning batch effect is likely not an issue. The mitochondrial DNA UMAP shows that there is low percentages of mtDNA across most of the clusters, suggesting that the quality of the read is high, and the two gene expression UMAPs show two distinct clusters by gene type, which would suggest successful integration and no major technical errors.
+
+
+**5.	Generate dot plots using these marker genes and any other you’d like to add:** S100A12, HLA-DQB1, CD14, LYZ, FCGR3A, MS4A7, NEAT1, CST3, FCER1A, FCGR3B, CD3D, IL7R, TRAV1-2, IL2RA, FOXP3, CD8A, IFIT1, IFIT3, TRDV2, GNLY, NKG7, XCL1, MKI67, MS4A1, CD37, JCHAIN, CD27, PPBP, TUBB1, PF4, CD34, HDC, CPA3. 
+
+Annotate your 10 clusters using the marker genes, and list your annotation with 1-2 key marker genes for each cluster below. Use this exact set of cell type labels: B-cells, CD4-T-cells, CD8-T-cells, Monocytes, Dividing-T-and-NK, Platelets, Plasma-cells, Dendritic-cells, Mast-cells, Neutrophils. 20 points
+
+```{r}
+# marker gene list
+markers = c( "S100A12",
+"HLA-DQB1",
+"CD14",
+"LYZ",
+"FCGR3A",
+"MS4A7",
+"NEAT1",
+"CST3", 
+"FCER1A",
+"FCGR3B",
+"CD3D",
+"IL7R",
+"TRAV1-2",
+"IL2RA",
+"FOXP3",
+"CD8A",
+"IFIT1",
+"IFIT3",
+"TRDV2",
+"GNLY",
+"NKG7",
+"XCL1",
+"MKI67",
+"MS4A1",
+"CD37",
+"JCHAIN",
+"CD27",
+"PPBP",
+"TUBB1",
+"PF4",
+"CD34",
+"HDC",
+"CPA3")
+
+# make dotplot
+print(DotPlot(obj.int, assay = "RNA",
+features = markers, dot.scale = 8) + RotatedAxis())
+```
+
+9: Mast-cells?? (HDC, CPA3)
+8:
+7: Plasma Cells (JCHAIN)
+6: Platelets (PPBP, TUBB1)
+5:
+4:
+3: B Cells????? (HLA-DQB1, CD37)
+2: CD8 T Cells (IL7R, CD3E)
+1: Monocytes? (LYZ, CD14)
+0: Dividing-T-and-NK (GNLY, NKG7)
+
+
+
+
+
+
 
 
 
